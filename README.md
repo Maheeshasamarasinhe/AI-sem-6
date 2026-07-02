@@ -225,6 +225,9 @@ This project demonstrates:
   - [NumPy](https://numpy.org/) - Numerical computing
   - [Scikit-learn](https://scikit-learn.org/) - Machine learning
   - [Keras/TensorFlow](https://www.tensorflow.org/) - Deep learning
+  - [Seborn] - Deep learning
+  - [Matplotlib.pyplot] - Deep learning
+  - [shap] - Data Analysing 
 
 ---
 
