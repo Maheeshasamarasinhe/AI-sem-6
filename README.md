@@ -1,3 +1,71 @@
+# Intelligent Student Learning Path Recommendation System
+
+This workspace contains a FastAPI backend for serving an existing Keras model that predicts whether a student will answer correctly from behavioral and affective tutoring-system data.
+
+## Project layout
+
+- backend/ - FastAPI app and backend requirements
+- frontend/ - React + Vite app to be scaffolded next
+- model_artifacts/ - place model files and lookup JSON files here
+
+## Backend files expected in model_artifacts/
+
+- student_success_model.keras
+- student_scaler.pkl
+- feature_columns.json
+- skills.json
+- problem_types.json
+- optional: shap_background.npy
+- optional: feature_importance.json
+
+The backend also falls back to the workspace root for the model and scaler so the current files can still be used during setup.
+
+## Backend setup
+
+1. Install Python dependencies:
+
+```powershell
+cd /d f:\AI-sem-6\backend
+C:/Users/ASUS/AppData/Local/Programs/Python/Python310/python.exe -m pip install -r requirements.txt
+```
+
+2. Start the API:
+
+```powershell
+cd /d f:\AI-sem-6\backend
+uvicorn app:app --reload
+```
+
+If `uvicorn` is not on your PATH, use:
+
+```powershell
+C:/Users/ASUS/AppData/Local/Programs/Python/Python310/python.exe -m uvicorn app:app --reload
+```
+
+## API contract
+
+- `GET /health` - basic status check
+- `GET /skills` - list of valid skill values
+- `GET /problem_types` - list of valid problem types
+- `POST /predict` - returns `probability`, `prediction`, and `confidence_label`
+- `POST /explain` - returns either per-student SHAP output when available or global feature importance fallback
+
+## Prediction preprocessing
+
+The backend mirrors the notebook preprocessing logic:
+
+1. One-hot encode `skill`, `problem_type`, and `first_action`
+2. Reindex to the trained feature column set from `feature_columns.json`
+3. Scale the numeric features with the saved `StandardScaler`
+4. Cast to `float32`
+5. Call `model.predict()`
+
+The target label `correct` is not an input to the API.
+
+## Frontend
+
+The frontend has not been scaffolded yet. I will build it after you confirm the API shape is right.
+
 # AI-sem-6: Student Learning Prediction Model
 
 ## 📚 Project Overview
@@ -6,7 +74,7 @@ This project implements a machine learning model to predict student success in e
 
 **Project Type:** Semester 6 Artificial Intelligence Assignment  
 **Primary Language:** Python (Jupyter Notebook)  
-**Dataset:** ASSISTments Platform Data  
+**Dataset:** ASSISTments Platform Data
 
 ---
 
@@ -45,45 +113,53 @@ The project uses educational data from the **ASSISTments online learning platfor
 ## 🔧 Data Pipeline
 
 ### 1. **Data Loading & Exploration**
-   - Load CSV data using pandas
-   - Inspect dataset shape and columns
-   - Identify data types and structure
+
+- Load CSV data using pandas
+- Inspect dataset shape and columns
+- Identify data types and structure
 
 ### 2. **Feature Engineering**
-   - Convert timestamps to datetime format
-   - Calculate `session_duration` (elapsed time in seconds)
-   - Create `is_scaffold` feature (indicates scaffolding use)
-   - Compute engagement and behavior metrics
+
+- Convert timestamps to datetime format
+- Calculate `session_duration` (elapsed time in seconds)
+- Create `is_scaffold` feature (indicates scaffolding use)
+- Compute engagement and behavior metrics
 
 ### 3. **Data Sampling**
-   - Use 10% random sample (612,327 rows) to prevent memory issues
-   - Maintain stratified distribution for balanced training
+
+- Use 10% random sample (612,327 rows) to prevent memory issues
+- Maintain stratified distribution for balanced training
 
 ### 4. **Missing Data Handling**
-   - **Skill Column:** Drop rows with missing skills (57.03% missing) - critical for learning path prediction
-   - **Time Columns:** Fill with median values
-   - **Count Columns:** Fill with zeros
-   - **Confidence Metrics:** Fill with zeros (default low confidence)
-   - **Categorical Variables:** Fill with "Unknown"
+
+- **Skill Column:** Drop rows with missing skills (57.03% missing) - critical for learning path prediction
+- **Time Columns:** Fill with median values
+- **Count Columns:** Fill with zeros
+- **Confidence Metrics:** Fill with zeros (default low confidence)
+- **Categorical Variables:** Fill with "Unknown"
 
 ### 5. **Outlier Handling**
-   - Apply **Winsorization** (percentile capping at 1st and 99th percentiles)
-   - Columns affected: `ms_first_response`, `session_duration`, `attempt_count`, `hint_count`
+
+- Apply **Winsorization** (percentile capping at 1st and 99th percentiles)
+- Columns affected: `ms_first_response`, `session_duration`, `attempt_count`, `hint_count`
 
 ### 6. **Encoding & Scaling**
-   - **Label Encoding:** Convert categorical features (`skill`, `problem_type`) to numeric values
-   - **One-Hot Encoding:** Available for categorical features if needed
-   - **Standardization:** Use StandardScaler on numerical features for neural networks
+
+- **Label Encoding:** Convert categorical features (`skill`, `problem_type`) to numeric values
+- **One-Hot Encoding:** Available for categorical features if needed
+- **Standardization:** Use StandardScaler on numerical features for neural networks
 
 ### 7. **Train-Validation-Test Split**
-   - **Training Set:** 80% (210,517 samples)
-   - **Validation Set:** 10% (26,286 samples)
-   - **Test Set:** 10% (26,312 samples)
-   - Stratified sampling to maintain class distribution
+
+- **Training Set:** 80% (210,517 samples)
+- **Validation Set:** 10% (26,286 samples)
+- **Test Set:** 10% (26,312 samples)
+- Stratified sampling to maintain class distribution
 
 ### 8. **Class Distribution**
-   - **Class 0 (Incorrect):** 79,533 samples (30.2%)
-   - **Class 1 (Correct):** 183,582 samples (69.8%)
+
+- **Class 0 (Incorrect):** 79,533 samples (30.2%)
+- **Class 1 (Correct):** 183,582 samples (69.8%)
 
 ---
 
@@ -106,6 +182,7 @@ Output Layer (1 unit, Sigmoid activation)
 ```
 
 **Model Configuration:**
+
 - **Loss Function:** Binary Crossentropy
 - **Optimizer:** Adam
 - **Metrics:** Accuracy
@@ -116,38 +193,41 @@ Output Layer (1 unit, Sigmoid activation)
 
 ## 📈 Features Used in Model
 
-| Feature | Type | Description |
-|---------|------|-------------|
-| `skill` | Categorical (Encoded) | Mathematics skill being practiced |
-| `attempt_count` | Numerical | Number of attempts for the problem |
-| `hint_count` | Numerical | Number of hints requested |
-| `bottom_hint` | Numerical | Whether bottom-out hint was shown |
-| `ms_first_response` | Numerical | Time to first response (milliseconds) |
-| `first_action` | Categorical | Type of first action (encoded) |
-| `session_duration` | Numerical | Total time spent on problem (seconds) |
-| `is_scaffold` | Binary | Whether scaffolding was used |
-| `Average_confidence(FRUSTRATED)` | Numerical | Confidence metric for frustration |
-| `Average_confidence(CONFUSED)` | Numerical | Confidence metric for confusion |
-| `Average_confidence(CONCENTRATING)` | Numerical | Confidence metric for concentration |
-| `Average_confidence(BORED)` | Numerical | Confidence metric for boredom |
-| `problem_type` | Categorical (Encoded) | Problem format type |
+| Feature                             | Type                  | Description                           |
+| ----------------------------------- | --------------------- | ------------------------------------- |
+| `skill`                             | Categorical (Encoded) | Mathematics skill being practiced     |
+| `attempt_count`                     | Numerical             | Number of attempts for the problem    |
+| `hint_count`                        | Numerical             | Number of hints requested             |
+| `bottom_hint`                       | Numerical             | Whether bottom-out hint was shown     |
+| `ms_first_response`                 | Numerical             | Time to first response (milliseconds) |
+| `first_action`                      | Categorical           | Type of first action (encoded)        |
+| `session_duration`                  | Numerical             | Total time spent on problem (seconds) |
+| `is_scaffold`                       | Binary                | Whether scaffolding was used          |
+| `Average_confidence(FRUSTRATED)`    | Numerical             | Confidence metric for frustration     |
+| `Average_confidence(CONFUSED)`      | Numerical             | Confidence metric for confusion       |
+| `Average_confidence(CONCENTRATING)` | Numerical             | Confidence metric for concentration   |
+| `Average_confidence(BORED)`         | Numerical             | Confidence metric for boredom         |
+| `problem_type`                      | Categorical (Encoded) | Problem format type                   |
 
 ---
 
 ## 🚀 How to Run
 
 ### Prerequisites
+
 ```bash
 pip install pandas numpy scikit-learn tensorflow keras
 ```
 
 ### Steps
+
 1. **Place Dataset:** Ensure `data.csv` is in the project root directory
 2. **Open Notebook:** Launch `SEM6 -AI.ipynb` in Jupyter Notebook
 3. **Run Cells Sequentially:** Execute each cell from top to bottom
 4. **Monitor Training:** Observe model training progress and validation metrics
 
 ### Expected Output
+
 - Data preprocessing logs and statistics
 - Missing data report
 - Outlier handling confirmation
@@ -159,12 +239,14 @@ pip install pandas numpy scikit-learn tensorflow keras
 ## 📉 Key Metrics & Analysis
 
 ### Data Quality
+
 - **Total Records Processed:** 263,115 (after handling missing skills)
 - **Missing Data Removed:** 57.03% of skill column
 - **Final Missing Values:** 0
 - **Outliers Capped:** Percentile-based Winsorization applied
 
 ### Model Performance Indicators
+
 - **Class Distribution:** Imbalanced (30.2% incorrect, 69.8% correct)
 - **Stratified Splitting:** Maintains class balance across train/val/test sets
 - **Data Type Optimization:** float32 for memory efficiency
@@ -200,6 +282,7 @@ AI-sem-6/
 ## 🎓 Learning Outcomes
 
 This project demonstrates:
+
 - ✅ Large-scale data preprocessing and cleaning
 - ✅ Feature engineering for educational data
 - ✅ Handling imbalanced datasets
@@ -227,7 +310,7 @@ This project demonstrates:
   - [Keras/TensorFlow](https://www.tensorflow.org/) - Deep learning
   - [Seborn] - Deep learning
   - [Matplotlib.pyplot] - Deep learning
-  - [shap] - Data Analysing 
+  - [shap] - Data Analysing
 
 ---
 
