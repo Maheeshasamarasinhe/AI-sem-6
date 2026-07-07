@@ -186,6 +186,9 @@ def create_app() -> FastAPI:
     def explain(request: PredictRequest) -> dict[str, Any]:
         _ensure_state_loaded()
 
+        import numpy as np
+        import pandas as pd
+
         if state.get("feature_importance"):
             return {
                 "mode": "global_importance",
@@ -267,7 +270,7 @@ def _prepare_model_row(request: PredictRequest) -> pd.DataFrame:
     row = pd.DataFrame([raw_payload])
     row["first_action"] = row["first_action"].astype(str)
 
-    encoded = pd.get_dummies(row, columns=["skill", "problem_type", "first_action"])
+    encoded = pd.get_dummies(row, columns=["skill", "problem_type", "first_action"], drop_first=True)
     encoded = encoded.reindex(columns=state["feature_columns"], fill_value=0)
 
     missing_numeric_columns = [column for column in NUMERIC_COLUMNS if column not in encoded.columns]

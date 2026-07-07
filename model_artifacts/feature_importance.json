@@ -1,0 +1,12 @@
+[
+  { "feature": "ms_first_response", "importance": 0.182 },
+  { "feature": "session_duration", "importance": 0.164 },
+  { "feature": "hint_count", "importance": 0.149 },
+  { "feature": "attempt_count", "importance": 0.137 },
+  { "feature": "Average_confidence(CONFUSED)", "importance": 0.121 },
+  { "feature": "Average_confidence(CONCENTRATING)", "importance": 0.101 },
+  { "feature": "Average_confidence(FRUSTRATED)", "importance": 0.082 },
+  { "feature": "bottom_hint", "importance": 0.041 },
+  { "feature": "Average_confidence(BORED)", "importance": 0.023 },
+  { "feature": "is_scaffold", "importance": 0.02 }
+]
